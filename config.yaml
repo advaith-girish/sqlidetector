@@ -1,0 +1,50 @@
+# SQL Injection Detector Configuration
+
+# Stage 0: Bloom Filter Whitelist
+stage0:
+  bloom_filter:
+    capacity: 1000000  # Expected number of unique safe queries
+    false_positive_rate: 0.001  # 0.1% false positive rate
+    model_path: "models/stage0_bloom.bin"
+
+# Stage 1: Linear SVM
+stage1:
+  feature_hashing:
+    vector_size: 65536  # Feature hash vector dimension
+    num_hash_functions: 2  # Ensemble hashing to reduce collisions
+  svm:
+    threshold: 0.5  # Probability threshold for classification
+    model_path: "models/stage1_svm.pkl"
+  tokenizer:
+    case_sensitive: false
+
+# Stage 2: DistilBERT
+stage2:
+  model:
+    model_name: "distilbert-base-uncased"
+    quantized: true
+    model_path: "models/stage2_distilbert"
+    max_length: 512  # Maximum sequence length
+    batch_size: 1  # Inference batch size (optimized for latency)
+  threshold: 0.5  # Probability threshold for classification
+
+# Pipeline settings
+pipeline:
+  enable_prefilter: true          # Reject invalid input (empty, too long, null bytes)
+  max_query_length: 65536         # Max query length in chars
+  enable_fast_blacklist: true     # Instant BLOCK for high-confidence attack patterns
+  enable_stage0: true
+  enable_stage1: true
+  enable_stage2: true
+  stage2_timeout_ms: 5000         # Timeout for Stage 2; on timeout use fallback
+  strict_mode: false             # If true: on timeout or error default to BLOCK
+  log_decisions: true
+  metrics_enabled: true
+  include_trigger: true           # Add trigger/reason to result for explainability
+
+# Training settings
+training:
+  data_path: "data"
+  validation_split: 0.2
+  test_split: 0.1
+  random_seed: 42
