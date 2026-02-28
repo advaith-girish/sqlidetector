@@ -2,3 +2,4 @@ ipynb.txt
 venv/
 __pycache__/
 scripts/
+.vscode/
